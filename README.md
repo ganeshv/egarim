@@ -23,18 +23,80 @@ The LED surrounding the shutter button is in one of 4 states:
   
 ### Pairing
 
-Once the shutter LED is in the solid blue state, hold the shutter button down for 5 seconds, until the LED enters the blinking blue/green state. Run
+This 'pairing' is not the same as Bluetooth pairing with a number code - don't bother going to your OS Bluetooth menu and looking for the camera to pair.
+
+Power on the camera. Once the shutter LED is in the solid blue state, hold the shutter button down for 5 seconds, until the LED enters the blinking blue/green state. Run
 
 `python bluestrap.py pair`
 
 If successful, you will see a series of messages like
 
 ```
+waiting for device (attempt 1 of 30)
+waiting for device (attempt 2 of 30)
+found camera
+waiting for service endpoint (attempt 1 of 30)
+key init request type: KEY_EXCHANGE_INITIATE
+key_exchange_request {
+  public_key: "\003\033..."
+  salt: "\360\316.."
+}
+
+key response response_status {
+  status_code: OK
+}
+request_id: 0
+key_exchange_response {
+  public_key: "\004\063..."
+  salt: "\160\216.."
+}
+
+Pairing response received; press shutter key once within 5 seconds to confirm
+key finalize request type: KEY_EXCHANGE_FINALIZE
+key_exchange_request {
+  public_key: "\003\033..."
+  salt: "\360\316.."
+}
+
+key finalize response response_status {
+  status_code: OK
+}
+request_id: 0
+
+Pairing finalized! Shared encryption key written to  me_cam.skey
+cleaning up..
+
 ```
 
-Press the shutter once when asked, and the pairing will continue and generate the shared key file, `me_cam.skey`. This file will be needed for all further communication with the camera.
+Press the shutter once when asked, and the pairing will continue and generate the shared key file, `me_cam.skey`. This file will be needed for all further communication with the camera. Run `python bluestrap.py status` to check that the pairing and credentials are valid.
 
 ### Bluetooth API calls
+
+Once pairing is done and we have the shared key, we can issue commands over Bluetooth or HTTP. Bluetooth is useful to pair, set the wifi creds, and check status to get the camera's IP address.
+
+```
+python bluestrap.py config_wifi --ssid <SSID> --password <password>
+```
+
+The camera's Wi-Fi LED lights up when connected. Use `status` to find its IP address.
+
+```
+python bluestrap.py status
+
+...
+http_server_status {
+    camera_hostname: "192.168.1.44"
+    camera_port: 8443
+    camera_certificate_signature: "0A\002.."
+  }
+...
+```
+
+To factory reset the camera,
+
+```
+python bluestrap.py factory_reset
+```
 
 ### HTTP API calls
 
