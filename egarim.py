@@ -17,17 +17,8 @@ ctx.verify_mode = ssl.CERT_NONE
 
 def main(opts):
 
-    if opts.subcommand == 'status':
-        resp = simple_cmd(opts, status_request)
-    elif opts.subcommand == 'get_capabilities':
-        resp = simple_cmd(opts, get_capabilities_request)
-    elif opts.subcommand == 'config_capture':
-        resp = simple_cmd(opts, capture_config_request, active=opts.mode, rtmp_endpoint=opts.rtmp_endpoint,
-           stream_name_key=opts.stream_name_key)
-    elif opts.subcommand == 'start_capture':
-        resp = simple_cmd(opts, start_capture_request, auto_stop=opts.auto_stop)
-    elif opts.subcommand == 'stop_capture':
-        resp = simple_cmd(opts, stop_capture_request)
+    if opts.subcommand in SIMPLE_CMDS:
+        resp = simple_cmd(opts, SIMPLE_CMDS[opts.subcommand])
     else:
         print('subcommand not implemented:', opts.subcommand)
         sys.exit(1)
@@ -41,14 +32,14 @@ def sign(req, skey):
     auth = base64.urlsafe_b64encode(h.digest()).decode('ascii')
     return auth
     
-def simple_cmd(opts, request, **kwargs):
+def simple_cmd(opts, request):
     with open(opts.skey, 'rb') as f:
         skey = f.read()
 
     headers = {
         'Content-Type': 'application/octet-stream'
     }
-    r = request(**kwargs)
+    r = request(opts)
     if opts.debug:
         print('request', r)
     data = r.SerializeToString()
@@ -70,12 +61,14 @@ def process_args():
 
     subparsers.add_parser('status')
     subparsers.add_parser('get_capabilities')
+    subparsers.add_parser('factory_reset')
 
     
     capture = subparsers.add_parser('config_capture')
-    capture.add_argument('--mode', help='capture mode (video/photo/live)', choices=['video', 'photo', 'live'], default='photo')
+    capture.add_argument('--mode', help='capture mode (video/photo/live)', choices=['video', 'photo', 'live'])
     capture.add_argument('--rtmp_endpoint')
     capture.add_argument('--stream_name_key')
+    capture.add_argument('--projection', choices=['fisheye', 'equirect'])
 
 
     start_capture = subparsers.add_parser('start_capture')

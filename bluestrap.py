@@ -106,14 +106,8 @@ def bzz(opts):
 
         if opts.subcommand == 'pair':
             pair(req, opts)
-        elif opts.subcommand == 'status':
-            simple_cmd(req, opts, status_request)
-        elif opts.subcommand == 'config_time':
-            simple_cmd(req, opts, time_config_request)
-        elif opts.subcommand == 'config_wifi':
-            simple_cmd(req, opts, wifi_config_request, ssid=opts.ssid, password=opts.password)
-        elif opts.subcommand == 'factory_reset':
-            simple_cmd(req, opts, factory_reset_request)
+        elif opts.subcommand in SIMPLE_CMDS:
+            simple_cmd(req, opts, SIMPLE_CMDS[opts.subcommand])
         else:
             print('wtf, unknown subcommand')
 
@@ -151,10 +145,10 @@ def pair(req, opts):
     else:
         print('Pairing failed!')
 
-def simple_cmd(req, opts, request, **kwargs):
+def simple_cmd(req, opts, request):
     respq = state['responseq']
 
-    r = request(**kwargs)
+    r = request(opts)
     print('request', r)
     rbytes = mm_encode(encrypt(r.SerializeToString(), opts.skey))
     req.WriteValue(rbytes, {})

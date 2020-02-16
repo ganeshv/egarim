@@ -126,6 +126,20 @@ python egarim.py --host 192.168.1.44 status
 (replacing the argument to `--host` with your camera's IP)
 
 
+### Custom Livestreaming
+
+The VR180 companion app only lets you livestream to Youtube. To stream to a custom end-point, e.g. one running at `rtmp://192.168.1.43/live` with the stream id `foo`,
+
+```
+python egarim.py --host 192.168.1.44 config_capture --mode live --rtmp_endpoint rtmp://192.168.1.43/live --stream_name_key foo
+# verify with status
+# start capture
+python egarim.py --host 192.168.1.44 start_capture
+# stop capture using the shutter button or the command below
+python egarim.py --host 192.168.1.44 stop_capture
+
+```
+
 ## Advanced Usage
 
 Read `camera_api.proto` and implement new commands `¯\_(ツ)_/¯`

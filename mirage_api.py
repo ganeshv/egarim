@@ -52,61 +52,70 @@ def new_request():
     req.header.request_id = counter
     return req
 
-def wifi_config_request(ssid=None, password=None):
-    if ssid is None or password is None:
+def config_wifi_request(opts):
+    if opts.ssid is None or opts.password is None:
         raise Exception('ssid and password must be set')
     req = new_request()
     req.type = CameraApiRequest.CONFIGURE
-    req.configuration_request.local_wifi_info.ssid = ssid
-    req.configuration_request.local_wifi_info.password = password
+    req.configuration_request.local_wifi_info.ssid = opts.ssid
+    req.configuration_request.local_wifi_info.password = opts.password
     return req
 
-def time_config_request(tz='Europe/London'):
+def config_time_request(opts):
     req = new_request()
     req.type = CameraApiRequest.CONFIGURE
     req.configuration_request.time_configuration.timestamp = int(datetime.datetime.now().replace(tzinfo=datetime.timezone.utc).timestamp() * 1000)
-    req.configuration_request.time_configuration.timezone = tz
+    if opts.timezone:
+        req.configuration_request.time_configuration.timezone = opts.timezone
     return req
 
-def capture_config_request(active=None, rtmp_endpoint=None, stream_name_key=None):
+def config_capture_request(opts):
     modes = {
         'live': CaptureMode.LIVE,
         'photo': CaptureMode.PHOTO,
         'video': CaptureMode.VIDEO
     }
+    projections = {
+        'fisheye': ProjectionType.DEFAULT_FISHEYE,
+        'equirect': ProjectionType.EQUIRECT
+    }
+
     req = new_request()
     req.type = CameraApiRequest.CONFIGURE
-    if active:
-        req.configuration_request.capture_mode.active_capture_type = modes[active]
-    if rtmp_endpoint:
-        req.configuration_request.capture_mode.configured_live_mode.rtmp_endpoint = rtmp_endpoint
-    if stream_name_key:
-        req.configuration_request.capture_mode.configured_live_mode.stream_name_key = stream_name_key
+    if opts.mode:
+        req.configuration_request.capture_mode.active_capture_type = modes[opts.mode]
+    if opts.rtmp_endpoint:
+        req.configuration_request.capture_mode.configured_live_mode.rtmp_endpoint = opts.rtmp_endpoint
+    if opts.stream_name_key:
+        req.configuration_request.capture_mode.configured_live_mode.stream_name_key = opts.stream_name_key
+    # projection doesn't seem to work though
+    if opts.mode == 'live' and opts.projection:
+        req.configuration_request.capture_mode.configured_live_mode.video_mode.projection_type = projections[opts.projection]
     return req
 
-def start_capture_request(auto_stop=None):
+def start_capture_request(opts):
     req = new_request()
     req.type = CameraApiRequest.START_CAPTURE
-    if auto_stop:
-        req.start_capture_request.auto_stop_duration_ms = auto_stop
+    if opts.auto_stop:
+        req.start_capture_request.auto_stop_duration_ms = opts.auto_stop
     return req
 
-def stop_capture_request():
+def stop_capture_request(opts):
     req = new_request()
     req.type = CameraApiRequest.STOP_CAPTURE
     return req
 
-def get_capabilities_request():
+def get_capabilities_request(opts):
     req = new_request()
     req.type = CameraApiRequest.GET_CAPABILITIES
     return req
 
-def status_request():
+def status_request(opts):
     req = new_request()
     req.type = CameraApiRequest.STATUS
     return req
 
-def factory_reset_request():
+def factory_reset_request(opts):
     req = new_request()
     req.type = CameraApiRequest.FACTORY_RESET
     return req
@@ -145,3 +154,15 @@ def parse_response(data):
 
 def key_finalize(name):
     return key_init(name, mode='finalize')
+
+# Simple one-shot requests (unlike pairing)
+SIMPLE_CMDS = {
+    'config_wifi': config_wifi_request,
+    'config_time': config_time_request,
+    'config_capture': config_capture_request,
+    'start_capture': start_capture_request,
+    'stop_capture': stop_capture_request,
+    'get_capabilities': get_capabilities_request,
+    'status': status_request,
+    'factory_reset': factory_reset_request
+}
