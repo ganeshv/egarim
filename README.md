@@ -9,6 +9,22 @@ The reference implementation of the camera firmware has been open-sourced by Goo
 
 ## Installation
 
+Instructions below apply to Ubuntu 18.04, YMMV for other distributions.
+
+First, packages to be installed:
+```
+sudo apt-get install jdk-default libdbus-1-dev python3-dev libglib2.0-dev
+```
+
+Run `make` to compile the Java files. These are taken from the Google VR180 camera reference implementation, so we get to use the exact same crypto code the camera is using. We can write python equivalents, but why bother? Life is short.
+
+Then setup the python environment.
+```
+virtualenv -p python3 /path/to/egarim-ve
+. /path/to/egarim-ve/bin/activate
+pip install dbus-python protobuf PyGObject
+```
+
 ## Basic Usage
 
 The camera uses an application level pairing protocol over Bluetooth which uses ECDH key agreement to establish a shared key. This key is then used to encrypt further API calls over Bluetooth, and/or to sign HTTP API calls over Wi-Fi.
@@ -99,6 +115,16 @@ python bluestrap.py factory_reset
 ```
 
 ### HTTP API calls
+
+To issue HTTP calls, we need the shared key as established by a previous bluetooth pairing process (by default, stored as `me_cam.skey`) and the IP address of the camera (found using `python bluestrap.py status`).
+
+To get the camera status using HTTP,
+
+```
+python egarim.py --host 192.168.1.44 status
+```
+(replacing the argument to `--host` with your camera's IP)
+
 
 ## Advanced Usage
 

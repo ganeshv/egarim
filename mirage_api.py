@@ -68,6 +68,39 @@ def time_config_request(tz='Europe/London'):
     req.configuration_request.time_configuration.timezone = tz
     return req
 
+def capture_config_request(active=None, rtmp_endpoint=None, stream_name_key=None):
+    modes = {
+        'live': CaptureMode.LIVE,
+        'photo': CaptureMode.PHOTO,
+        'video': CaptureMode.VIDEO
+    }
+    req = new_request()
+    req.type = CameraApiRequest.CONFIGURE
+    if active:
+        req.configuration_request.capture_mode.active_capture_type = modes[active]
+    if rtmp_endpoint:
+        req.configuration_request.capture_mode.configured_live_mode.rtmp_endpoint = rtmp_endpoint
+    if stream_name_key:
+        req.configuration_request.capture_mode.configured_live_mode.stream_name_key = stream_name_key
+    return req
+
+def start_capture_request(auto_stop=None):
+    req = new_request()
+    req.type = CameraApiRequest.START_CAPTURE
+    if auto_stop:
+        req.start_capture_request.auto_stop_duration_ms = auto_stop
+    return req
+
+def stop_capture_request():
+    req = new_request()
+    req.type = CameraApiRequest.STOP_CAPTURE
+    return req
+
+def get_capabilities_request():
+    req = new_request()
+    req.type = CameraApiRequest.GET_CAPABILITIES
+    return req
+
 def status_request():
     req = new_request()
     req.type = CameraApiRequest.STATUS

@@ -1,0 +1,7 @@
+*.sw*
+*class
+*pyc
+*key
+*skey
+*pub
+*salt
