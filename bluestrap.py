@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 # Lenovo Mirage camera API client for pairing and control over Bluetooth on Linux.
 
 import dbus

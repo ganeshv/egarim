@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 # Lenovo Mirage camera API client over HTTP
 # Before using this tool, you need to have generated the shared encryption key 
 # using bluestrap.py
