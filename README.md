@@ -91,13 +91,13 @@ Press the shutter once when asked, and the pairing will continue and generate th
 Once pairing is done and we have the shared key, we can issue commands over Bluetooth or HTTP. Bluetooth is useful to pair, set the wifi creds, and check status to get the camera's IP address.
 
 ```
-python bluestrap.py config_wifi --ssid <SSID> --password <password>
+./bluestrap.py config_wifi --ssid <SSID> --password <password>
 ```
 
-The camera's Wi-Fi LED lights up when connected. Use `status` to find its IP address.
+The camera's Wi-Fi LED lights up when connected. Use `status` to find its IP address. This command also caches the results to `~/.egarim-status`, so the IP address can be found for HTTP API calls.
 
 ```
-python bluestrap.py status
+./bluestrap.py status
 
 ...
 http_server_status {
@@ -111,7 +111,7 @@ http_server_status {
 To factory reset the camera,
 
 ```
-python bluestrap.py factory_reset
+./bluestrap.py factory_reset
 ```
 
 ### HTTP API calls
@@ -121,9 +121,9 @@ To issue HTTP calls, we need the shared key as established by a previous bluetoo
 To get the camera status using HTTP,
 
 ```
-python egarim.py --host 192.168.1.44 status
+./egarim.py --host 192.168.1.44 status
 ```
-(replacing the argument to `--host` with your camera's IP)
+In normal usage, `--host` is not required as the IP address is retrieved from the value from the last cached status received over Bluetooth. Run `bluestrap.py status` whenever you change Wi-Fi APs to refresh the status cache.
 
 
 ### Custom Livestreaming
@@ -131,12 +131,12 @@ python egarim.py --host 192.168.1.44 status
 The VR180 companion app only lets you livestream to Youtube. To stream to a custom end-point, e.g. one running at `rtmp://192.168.1.43/live` with the stream id `foo`,
 
 ```
-python egarim.py --host 192.168.1.44 config_capture --mode live --rtmp_endpoint rtmp://192.168.1.43/live --stream_name_key foo
+./egarim.py config_capture --mode live --rtmp_endpoint rtmp://192.168.1.43/live --stream_name_key foo
 # verify with status
 # start capture
-python egarim.py --host 192.168.1.44 start_capture
+./egarim.py start_capture
 # stop capture using the shutter button or the command below
-python egarim.py --host 192.168.1.44 stop_capture
+./egarim.py stop_capture
 
 ```
 ### Media Management
@@ -145,26 +145,33 @@ To list, download and delete images and videos from internal storage, use the `l
 
 List files in camera internal storage
 ```
-python egarim.py --host 192.168.1.44 list_media
+./egarim.py list_media
 # each line contains pathname, file size, video duration in ms, width and height
 /storage/emulated/0/DCIM/VR180/20200218-051539536.vr.mp4 1238976 5868 2560 1440
 /storage/emulated/0/DCIM/VR180/20200218-051539556.vr.jpg 3243859 0 3016 3016
 ```
 
-Copy a file to /tmp
+Download a file to /tmp
 ```
-python egarim.py --host 192.168.1.44 get_media --dest /tmp /storage/emulated/0/DCIM/VR180/20200218-051539536.vr.mp4
+./egarim.py get_media --dest /tmp /storage/emulated/0/DCIM/VR180/20200218-051539536.vr.mp4
 ```
 
 Delete a file in camera internal storage
 ```
-python egarim.py --host 192.168.1.44 delete_media /storage/emulated/0/DCIM/VR180/20200218-051539536.vr.mp4
+./egarim.py delete_media /storage/emulated/0/DCIM/VR180/20200218-051539536.vr.mp4
 ```
 
-Copy all files to /tmp
+Download all files to /tmp
 ```
-for i in `python egarim.py --host 192.168.1.44 list_media | awk '{print $1}'`; do
-  python egarim.py --host 192.168.1.44 get_media --dest /tmp $i
+for i in `./egarim.py list_media | awk '{print $1}'`; do
+  ./egarim.py get_media --dest /tmp $i
+done
+```
+
+Delete all files in camera internal storage
+```
+for i in `./egarim.py list_media | awk '{print $1}'`; do
+  ./egarim.py delete_media $i
 done
 ```
 
