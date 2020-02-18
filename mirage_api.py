@@ -89,8 +89,25 @@ def config_capture_request(opts):
     if opts.stream_name_key:
         req.configuration_request.capture_mode.configured_live_mode.stream_name_key = opts.stream_name_key
     # projection doesn't seem to work though
-    if opts.mode == 'live' and opts.projection:
-        req.configuration_request.capture_mode.configured_live_mode.video_mode.projection_type = projections[opts.projection]
+    if opts.mode == 'live':
+        if opts.projection:
+            req.configuration_request.capture_mode.configured_live_mode.video_mode.projection_type = projections[opts.projection]
+        if opts.width:
+            req.configuration_request.capture_mode.configured_live_mode.video_mode.frame_size.frame_width = opts.width
+        if opts.height:
+            req.configuration_request.capture_mode.configured_live_mode.video_mode.frame_size.frame_height = opts.height
+    if opts.mode == 'video':
+        if opts.projection:
+            req.configuration_request.capture_mode.configured_video_mode.projection_type = projections[opts.projection]
+        if opts.width:
+            req.configuration_request.capture_mode.configured_video_mode.frame_size.frame_width = opts.width
+        if opts.height:
+            req.configuration_request.capture_mode.configured_video_mode.frame_size.frame_height = opts.height
+    if opts.mode == 'photo':
+        if opts.width:
+            req.configuration_request.capture_mode.configured_photo_mode.frame_size.frame_width = opts.width
+        if opts.height:
+            req.configuration_request.capture_mode.configured_photo_mode.frame_size.frame_height = opts.height
     return req
 
 def start_capture_request(opts):
@@ -108,6 +125,25 @@ def stop_capture_request(opts):
 def get_capabilities_request(opts):
     req = new_request()
     req.type = CameraApiRequest.GET_CAPABILITIES
+    return req
+
+def get_st3dbox_request(opts):
+    req = new_request()
+    req.type = CameraApiRequest.GET_CAMERA_ST3D_BOX
+    return req
+
+def get_sv3dbox_request(opts):
+    req = new_request()
+    req.type = CameraApiRequest.GET_CAMERA_SV3D_BOX
+    return req
+
+def list_media_request(opts):
+    req = new_request()
+    req.type = CameraApiRequest.LIST_MEDIA
+    if opts.start:
+        req.list_media_request.start_index = opts.start
+    if opts.count:
+        req.list_media_request.media_count = opts.count
     return req
 
 def status_request(opts):
@@ -164,5 +200,8 @@ SIMPLE_CMDS = {
     'stop_capture': stop_capture_request,
     'get_capabilities': get_capabilities_request,
     'status': status_request,
-    'factory_reset': factory_reset_request
+    'get_st3dbox': get_st3dbox_request,
+    'get_sv3dbox': get_sv3dbox_request,
+    'factory_reset': factory_reset_request,
+    'list_media': list_media_request
 }

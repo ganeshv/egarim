@@ -10,32 +10,40 @@ import argparse
 import ssl
 import base64
 import hmac
+import shutil
+import datetime
 
 ctx = ssl.create_default_context()
 ctx.check_hostname = False
 ctx.verify_mode = ssl.CERT_NONE
 
 def main(opts):
+    with open(opts.skey, 'rb') as f:
+        skey = f.read()
 
-    if opts.subcommand in SIMPLE_CMDS:
-        resp = simple_cmd(opts, SIMPLE_CMDS[opts.subcommand])
+    if opts.subcommand == 'list_media':
+        list_media(skey, opts)
+    elif opts.subcommand == 'get_media':
+        get_media(skey, opts)
+    elif opts.subcommand == 'delete_media':
+        delete_media(skey, opts)
+    elif opts.subcommand in SIMPLE_CMDS:
+        resp = simple_cmd(skey, opts, SIMPLE_CMDS[opts.subcommand])
+        print(resp)
     else:
         print('subcommand not implemented:', opts.subcommand)
         sys.exit(1)
-    print(resp)
 
 def sign(req, skey):
     h = hmac.new(skey, digestmod='sha256')
     h.update(req.method.encode('utf-8'))
     h.update(req.selector.encode('utf-8'))
-    h.update(req.data)
+    if req.data:
+        h.update(req.data)
     auth = base64.urlsafe_b64encode(h.digest()).decode('ascii')
     return auth
     
-def simple_cmd(opts, request):
-    with open(opts.skey, 'rb') as f:
-        skey = f.read()
-
+def simple_cmd(skey, opts, request):
     headers = {
         'Content-Type': 'application/octet-stream'
     }
@@ -50,6 +58,30 @@ def simple_cmd(opts, request):
         data = f.read()
         return parse_response(data)
 
+def list_media(skey, opts):
+    resp = simple_cmd(skey, opts, SIMPLE_CMDS[opts.subcommand])
+    if opts.debug:
+        print(resp)
+    for item in resp.media.media:
+        print('%s %d %d %d %d' % (item.filename, item.size, item.duration, item.width, item.height))
+
+def get_media(skey, opts):
+    req = urllib.request.Request('https://%s:%s/media/%s' % (opts.host, opts.port, opts.path), method='GET')
+    signature = sign(req, skey)
+    req.add_header('Authorization', 'daydreamcamera ' + signature)
+    outfile = os.path.join(opts.dest, os.path.basename(opts.path))
+    print('copying ', opts.path)
+    with urllib.request.urlopen(req, context=ctx) as f, open(outfile, 'wb') as out:
+        shutil.copyfileobj(f, out)
+        
+def delete_media(skey, opts):
+    req = urllib.request.Request('https://%s:%s/media/%s' % (opts.host, opts.port, opts.path), method='DELETE')
+    signature = sign(req, skey)
+    req.add_header('Authorization', 'daydreamcamera ' + signature)
+    print('deleting ', opts.path)
+    with urllib.request.urlopen(req, context=ctx) as f:
+        data = f.read()
+
 def process_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--host', help='camera hostname/IP', required=True)
@@ -62,6 +94,8 @@ def process_args():
     subparsers.add_parser('status')
     subparsers.add_parser('get_capabilities')
     subparsers.add_parser('factory_reset')
+    subparsers.add_parser('get_st3dbox')
+    subparsers.add_parser('get_sv3dbox')
 
     
     capture = subparsers.add_parser('config_capture')
@@ -69,12 +103,25 @@ def process_args():
     capture.add_argument('--rtmp_endpoint')
     capture.add_argument('--stream_name_key')
     capture.add_argument('--projection', choices=['fisheye', 'equirect'])
+    capture.add_argument('--width', type=int)
+    capture.add_argument('--height', type=int)
 
 
     start_capture = subparsers.add_parser('start_capture')
     start_capture.add_argument('--auto_stop', help='auto stop after x milliseconds', type=int)
 
-    stop_capture = subparsers.add_parser('stop_capture')
+    subparsers.add_parser('stop_capture')
+
+    list_media = subparsers.add_parser('list_media')
+    list_media.add_argument('--start', type=int)
+    list_media.add_argument('--count', type=int, default=100)
+
+    get_media = subparsers.add_parser('get_media')
+    get_media.add_argument('--dest', default='.')
+    get_media.add_argument('path')
+
+    delete_media = subparsers.add_parser('delete_media')
+    delete_media.add_argument('path')
 
     opts = parser.parse_args()
     if opts.subcommand is None:
