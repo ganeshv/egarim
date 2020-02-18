@@ -139,6 +139,34 @@ python egarim.py --host 192.168.1.44 start_capture
 python egarim.py --host 192.168.1.44 stop_capture
 
 ```
+### Media Management
+
+To list, download and delete images and videos from internal storage, use the `list_media`, `get_media` and `delete_media` commands. Examples below:
+
+List files in camera internal storage
+```
+python egarim.py --host 192.168.1.44 list_media
+# each line contains pathname, file size, video duration in ms, width and height
+/storage/emulated/0/DCIM/VR180/20200218-051539536.vr.mp4 1238976 5868 2560 1440
+/storage/emulated/0/DCIM/VR180/20200218-051539556.vr.jpg 3243859 0 3016 3016
+```
+
+Copy a file to /tmp
+```
+python egarim.py --host 192.168.1.44 get_media --dest /tmp /storage/emulated/0/DCIM/VR180/20200218-051539536.vr.mp4
+```
+
+Delete a file in camera internal storage
+```
+python egarim.py --host 192.168.1.44 delete_media /storage/emulated/0/DCIM/VR180/20200218-051539536.vr.mp4
+```
+
+Copy all files to /tmp
+```
+for i in `python egarim.py --host 192.168.1.44 list_media | awk '{print $1}'`; do
+  python egarim.py --host 192.168.1.44 get_media --dest /tmp $i
+done
+```
 
 ## Advanced Usage
 
