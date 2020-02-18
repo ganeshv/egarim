@@ -14,7 +14,7 @@ import queue
 import threading
 import argparse
 import os
-
+import google.protobuf.json_format
 from mirage_api import *
 
 SERVICE_NAME = 'org.bluez'
@@ -106,6 +106,8 @@ def bzz(opts):
 
         if opts.subcommand == 'pair':
             pair(req, opts)
+        elif opts.subcommand == 'status':
+            status(req, opts)
         elif opts.subcommand in SIMPLE_CMDS:
             simple_cmd(req, opts, SIMPLE_CMDS[opts.subcommand])
         else:
@@ -145,6 +147,11 @@ def pair(req, opts):
     else:
         print('Pairing failed!')
 
+def status(req, opts):
+    resp = simple_cmd(req, opts, SIMPLE_CMDS['status'])
+    with open(os.path.join(os.path.expanduser('~'), '.egarim-status'), 'w') as f:
+        f.write(google.protobuf.json_format.MessageToJson(resp))
+
 def simple_cmd(req, opts, request):
     respq = state['responseq']
 
@@ -154,6 +161,7 @@ def simple_cmd(req, opts, request):
     req.WriteValue(rbytes, {})
     response = parse_response(decrypt(mm_decode(respq.get()), opts.skey))
     print(response)
+    return response
 
 def setup_response_queue(path):
 

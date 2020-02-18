@@ -12,6 +12,7 @@ import base64
 import hmac
 import shutil
 import datetime
+import json
 
 ctx = ssl.create_default_context()
 ctx.check_hostname = False
@@ -84,7 +85,7 @@ def delete_media(skey, opts):
 
 def process_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--host', help='camera hostname/IP', required=True)
+    parser.add_argument('--host', help='camera hostname/IP')
     parser.add_argument('--port', help='camera https port', default=8443)
     parser.add_argument('--debug', help='verbose debugging', action='store_true')
     parser.add_argument('--skey', help='shared encryption key file', default='me_cam.skey')
@@ -131,6 +132,16 @@ def process_args():
     if not os.path.exists(opts.skey):
         print('%s doesn\'t exist; pair using btmirage.py to generate the shared encryption key' % (opts.skey,))
         sys.exit(1)
+
+    if not opts.host:
+        status_file = os.path.join(os.path.expanduser('~'), '.egarim-status')
+        if not os.path.exists(status_file):
+            print('no host specified and no status file; run "python bluestrap.py status" to retrieve camera IP')
+            sys.exit(1)
+        with open(status_file, 'r') as f:
+            status = json.loads(f.read())
+            opts.host = status['cameraStatus']['httpServerStatus']['cameraHostname'][0]
+            opts.port = status['cameraStatus']['httpServerStatus']['cameraPort']
 
     return opts
 
