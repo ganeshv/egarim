@@ -30,6 +30,10 @@ def main(opts):
         get_media(skey, opts)
     elif opts.subcommand == 'delete_media':
         delete_media(skey, opts)
+    elif opts.subcommand == 'start_viewfinder':
+        start_viewfinder(skey, opts)
+    elif opts.subcommand == 'stop_viewfinder':
+        stop_viewfinder(skey, opts)
     elif opts.subcommand in SIMPLE_CMDS:
         resp = simple_cmd(skey, opts, SIMPLE_CMDS[opts.subcommand])
         print(resp)
@@ -85,6 +89,27 @@ def delete_media(skey, opts):
     with urllib.request.urlopen(req, context=ctx) as f:
         data = f.read()
 
+def start_viewfinder(skey, opts):
+    opts.sdp = sys.stdin.read()
+    resp = simple_cmd(skey, opts, SIMPLE_CMDS[opts.subcommand])
+    out = {}
+    if resp.response_status.status_code != CameraApiResponse.ResponseStatus.OK:
+        out['error'] = 'Camera API error'
+    else:
+        out['sdp'] = resp.webrtc_answer.session_description
+        ice = [{'sdpMid': i.sdp_mid, 'sdpMLineIndex': i.sdp_m_line_index, 'candidate': i.sdp} for i in resp.webrtc_answer.ice_candidate]
+        out['ice'] = ice
+    print(json.dumps(out))
+
+def stop_viewfinder(skey, opts):
+    resp = simple_cmd(skey, opts, SIMPLE_CMDS[opts.subcommand])
+    out = {}
+    if resp.response_status.status_code != CameraApiResponse.ResponseStatus.OK:
+        out['error'] = 'Camera API error'
+    else:
+        out['response'] = str(resp)
+    print(json.dumps(out))
+
 def process_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--host', help='camera hostname/IP')
@@ -102,18 +127,25 @@ def process_args():
 
     
     capture = subparsers.add_parser('config_capture')
-    capture.add_argument('--mode', help='capture mode (video/photo/live)', choices=['video', 'photo', 'live'])
+    capture.add_argument('--mode', help='capture mode (video/photo/live) or viewfinder', choices=['video', 'photo', 'live', 'viewfinder'])
     capture.add_argument('--rtmp_endpoint')
     capture.add_argument('--stream_name_key')
     capture.add_argument('--projection', choices=['fisheye', 'equirect'])
     capture.add_argument('--width', type=int)
     capture.add_argument('--height', type=int)
+    capture.add_argument('--stereo', help='set stereo mode for viewfinder', action='store_true')
 
 
     start_capture = subparsers.add_parser('start_capture')
     start_capture.add_argument('--auto_stop', help='auto stop after x milliseconds', type=int)
 
     subparsers.add_parser('stop_capture')
+
+    subparsers.add_parser('start_viewfinder')
+    subparsers.add_parser('stop_viewfinder')
+
+    get_debug_logs = subparsers.add_parser('get_debug_logs')
+    get_debug_logs.add_argument('--count', type=int, default=100)
 
     list_media = subparsers.add_parser('list_media')
     list_media.add_argument('--start', type=int)

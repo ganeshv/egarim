@@ -2,6 +2,7 @@ import datetime
 from camera_api_pb2 import *
 import subprocess
 import io
+import json
 
 JMIRAGE = "java -cp . MirageCrypto "
 counter = 2000
@@ -82,7 +83,7 @@ def config_capture_request(opts):
 
     req = new_request()
     req.type = CameraApiRequest.CONFIGURE
-    if opts.mode:
+    if opts.mode and opts.mode != 'viewfinder':
         req.configuration_request.capture_mode.active_capture_type = modes[opts.mode]
     if opts.rtmp_endpoint:
         req.configuration_request.capture_mode.configured_live_mode.rtmp_endpoint = opts.rtmp_endpoint
@@ -108,6 +109,14 @@ def config_capture_request(opts):
             req.configuration_request.capture_mode.configured_photo_mode.frame_size.frame_width = opts.width
         if opts.height:
             req.configuration_request.capture_mode.configured_photo_mode.frame_size.frame_height = opts.height
+    if opts.mode == 'viewfinder':
+        if opts.width:
+            req.configuration_request.capture_mode.viewfinder_mode.frame_size.frame_width = opts.width
+        if opts.height:
+            req.configuration_request.capture_mode.viewfinder_mode.frame_size.frame_height = opts.height
+        if opts.stereo:
+            req.configuration_request.capture_mode.viewfinder_mode.stereo_mode = ViewfinderMode.STEREO_MODE_STEREO_LONG_SIDE
+        req.configuration_request.capture_mode.viewfinder_mode.frames_per_second = 30.0
     return req
 
 def start_capture_request(opts):
@@ -154,6 +163,27 @@ def status_request(opts):
 def factory_reset_request(opts):
     req = new_request()
     req.type = CameraApiRequest.FACTORY_RESET
+    return req
+
+def start_viewfinder_request(opts):
+    req = new_request()
+    req.type = CameraApiRequest.START_VIEWFINDER_WEBRTC
+    req.webrtc_request.session_name = "foo"
+    req.webrtc_request.offer.session_description = opts.sdp
+    ice = req.webrtc_request.offer.ice_candidate.add()
+    return req
+
+def stop_viewfinder_request(opts):
+    req = new_request()
+    req.type = CameraApiRequest.STOP_VIEWFINDER_WEBRTC
+    req.webrtc_request.session_name = "foo"
+    return req
+
+def get_debug_logs_request(opts):
+    req = new_request()
+    req.type = CameraApiRequest.GET_DEBUG_LOGS
+    req.debug_logs_request.max_count = opts.count
+
     return req
 
 def key_init(name, mode='initiate'):
@@ -203,5 +233,8 @@ SIMPLE_CMDS = {
     'get_st3dbox': get_st3dbox_request,
     'get_sv3dbox': get_sv3dbox_request,
     'factory_reset': factory_reset_request,
-    'list_media': list_media_request
+    'list_media': list_media_request,
+    'start_viewfinder': start_viewfinder_request,
+    'stop_viewfinder': stop_viewfinder_request,
+    'get_debug_logs': get_debug_logs_request
 }
