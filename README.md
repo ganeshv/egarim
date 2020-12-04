@@ -125,13 +125,36 @@ To get the camera status using HTTP,
 ```
 In normal usage, `--host` is not required as the IP address is retrieved from the value from the last cached status received over Bluetooth. Run `bluestrap.py status` whenever you change Wi-Fi APs to refresh the status cache.
 
+### Taking a photo
 
-### Custom Livestreaming
-
-The VR180 companion app only lets you livestream to Youtube. To stream to a custom end-point, e.g. one running at `rtmp://192.168.1.43/live` with the stream id `foo`,
+To take a photo, we first need to set the capture mode to `photo`, (optionally) configure the resolution, and then initiate a capture.
 
 ```
-./egarim.py config_capture --mode live --rtmp_endpoint rtmp://192.168.1.43/live --stream_name_key foo
+./egarim.py config_capture -h
+```
+
+shows the list of available capture configuration options to be set. For photos, only `width` and `height` are relevant. At a minimum, we set the capture mode:
+
+
+```
+./egarim.py config_capture --mode photo
+./egarim.py status | grep active_capture_type
+```
+
+The last command should print `active_capture_type: PHOTO`. To click,
+
+```
+./egarim.py start_capture
+```
+
+You should hear a shutter noise as a photo is captured. Taking a video is similar, except there is an additional `egarim.py stop_capture` to terminate the video.
+
+### Custom Live Streaming
+
+The VR180 companion app only lets you live stream to Youtube. To stream to a custom end-point, e.g. one running at `rtmp://192.168.1.43/egarim_sample` with the stream id `foo`,
+
+```
+./egarim.py config_capture --mode live --rtmp_endpoint rtmp://192.168.1.43/egarim_sample --stream_name_key foo
 # verify with status
 # start capture
 ./egarim.py start_capture
@@ -139,6 +162,41 @@ The VR180 companion app only lets you livestream to Youtube. To stream to a cust
 ./egarim.py stop_capture
 
 ```
+
+If the camera goes to sleep, the live streaming parameters are lost, so always set them with `config_capture` before `start_capture`. Wifi connections in the 5GHz band are preferred for live streaming at high resolution. Many routers have different SSIDs for 2.4 and 5GHz - given a choice, pick the latter.
+
+### Setting up a Custom Live Stream Server
+
+There are many RTMP server solutions; here is a minimal setup using Ubuntu 18.04 and nginx.
+
+```
+sudo apt-get install nginx nginx-mod-rtmp ffmpeg
+```
+
+Edit `/etc/nginx/nginx.conf` and append the following lines to the bottom:
+
+```
+rtmp {
+    server {
+        listen 1935;
+        application egarim_sample {
+            live on;
+            record off;
+        }
+    }
+}
+```
+
+and reload nginx using `systemctl reload nginx`. Firewall issues are beyond the scope of this README.
+
+Start live streaming from the camera using the steps described in the previous section, replacing the IP address in the example with the IP address of the server on which nginx is running. To view the live stream from the same machine, 
+
+```
+ffplay -fflags nobuffer rtmp://localhost/egarim_sample/foo
+```
+
+The `nobuffer` flag reduces latency to about 500ms.
+
 ### Media Management
 
 To list, download and delete images and videos from internal storage, use the `list_media`, `get_media` and `delete_media` commands. Examples below:
