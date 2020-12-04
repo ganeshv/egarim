@@ -13,7 +13,7 @@ Instructions below apply to Ubuntu 18.04, YMMV for other distributions.
 
 First, packages to be installed:
 ```
-sudo apt-get install jdk-default libdbus-1-dev python3-dev libglib2.0-dev
+sudo apt-get install default-jdk libdbus-1-dev python3-dev libglib2.0-dev libcairo2-dev libgirepository1.0-dev
 ```
 
 Run `make` to compile the Java files. These are taken from the Google VR180 camera reference implementation, so we get to use the exact same crypto code the camera is using. We can write python equivalents, but why bother? Life is short.
