@@ -170,7 +170,7 @@ If the camera goes to sleep, the live streaming parameters are lost, so always s
 There are many RTMP server solutions; here is a minimal setup using Ubuntu 18.04 and nginx.
 
 ```
-sudo apt-get install nginx nginx-mod-rtmp ffmpeg
+sudo apt-get install nginx libnginx-mod-rtmp ffmpeg
 ```
 
 Edit `/etc/nginx/nginx.conf` and append the following lines to the bottom:
